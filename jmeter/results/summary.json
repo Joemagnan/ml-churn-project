@@ -1,0 +1,118 @@
+{
+  "1_avant_optimisation": {
+    "100_users": {
+      "samples": 1000,
+      "users": 100,
+      "average_ms": 2541.4,
+      "median_ms": 2399,
+      "p90_ms": 3791,
+      "p95_ms": 4053,
+      "p99_ms": 4337,
+      "min_ms": 88,
+      "max_ms": 4887,
+      "throughput_rps": 29.5,
+      "error_pct": 0.0,
+      "error_codes": {},
+      "duration_s": 33.9
+    },
+    "500_users": {
+      "samples": 5000,
+      "users": 500,
+      "average_ms": 13298.0,
+      "median_ms": 12922,
+      "p90_ms": 20357,
+      "p95_ms": 21253,
+      "p99_ms": 21782,
+      "min_ms": 7,
+      "max_ms": 22178,
+      "throughput_rps": 36.0,
+      "error_pct": 0.94,
+      "error_codes": {
+        "Non HTTP response code: org.apache.http.conn.HttpHostConnectException": 47
+      },
+      "duration_s": 138.9
+    },
+    "1000_users": {
+      "samples": 10000,
+      "users": 1000,
+      "average_ms": 22756.7,
+      "median_ms": 22742,
+      "p90_ms": 30014,
+      "p95_ms": 30017,
+      "p99_ms": 30024,
+      "min_ms": 4,
+      "max_ms": 30617,
+      "throughput_rps": 41.3,
+      "error_pct": 27.6,
+      "error_codes": {
+        "Non HTTP response code: org.apache.http.conn.HttpHostConnectException": 404,
+        "Non HTTP response code: java.net.SocketTimeoutException": 2356
+      },
+      "duration_s": 241.9
+    }
+  },
+  "2_apres_optimisation": {
+    "100_users": {
+      "samples": 1000,
+      "users": 2,
+      "average_ms": 4.0,
+      "median_ms": 4,
+      "p90_ms": 6,
+      "p95_ms": 6,
+      "p99_ms": 7,
+      "min_ms": 2,
+      "max_ms": 57,
+      "throughput_rps": 101.7,
+      "error_pct": 0.0,
+      "error_codes": {},
+      "duration_s": 9.8
+    },
+    "500_users": {
+      "samples": 5000,
+      "users": 21,
+      "average_ms": 5.8,
+      "median_ms": 5,
+      "p90_ms": 8,
+      "p95_ms": 11,
+      "p99_ms": 24,
+      "min_ms": 2,
+      "max_ms": 73,
+      "throughput_rps": 510.7,
+      "error_pct": 0.0,
+      "error_codes": {},
+      "duration_s": 9.8
+    },
+    "1000_users": {
+      "samples": 10000,
+      "users": 72,
+      "average_ms": 17.3,
+      "median_ms": 11,
+      "p90_ms": 40,
+      "p95_ms": 52,
+      "p99_ms": 87,
+      "min_ms": 2,
+      "max_ms": 185,
+      "throughput_rps": 1017.8,
+      "error_pct": 0.0,
+      "error_codes": {},
+      "duration_s": 9.8
+    }
+  },
+  "3_stress_1000_utilisateurs_x50": {
+    "1000_users": {
+      "samples": 50000,
+      "users": 1000,
+      "average_ms": 637.7,
+      "median_ms": 687,
+      "p90_ms": 866,
+      "p95_ms": 897,
+      "p99_ms": 946,
+      "min_ms": 8,
+      "max_ms": 1035,
+      "throughput_rps": 1149.6,
+      "error_pct": 0.0,
+      "error_codes": {},
+      "duration_s": 43.5
+    }
+  }
+}
