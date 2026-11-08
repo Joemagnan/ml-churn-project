@@ -1,0 +1,164 @@
+# Architecture complète (PARTIES 15, 20, 21, 22 et 23)
+#
+#   Utilisateur ─► frontend (Nginx :8080) ─► api (FastAPI :8000) ─► modèle
+#   api ── fichier de logs JSON ─► logstash ─► elasticsearch (:9200) ─► kibana (:5601)
+#   api ── /metrics ─► prometheus (:9090) ─► grafana (:3000)
+#
+# Corrections du sujet : Grafana était lancé à part avec « docker run » et ne
+# pouvait pas joindre Prometheus ; le compose ELK n'était pas fourni. Tous les
+# services sont ici sur le même réseau, avec des healthchecks et des volumes.
+#
+# Les configurations (Prometheus, Grafana, Logstash, Nginx, Kibana) sont
+# intégrées dans des images construites ici plutôt que montées depuis le disque :
+# les montages de fichiers dépendent du partage de disque de Docker Desktop
+# (inopérant sur un disque D: non partagé) ; une image se comporte pareil partout.
+#
+# Lancer :            docker compose up -d --build
+# Sans ELK (petite VM) : docker compose up -d --build api frontend prometheus grafana
+# Ports modifiables :  API_PORT=8001 docker compose up -d   (voir .env.example)
+
+name: ml-churn
+
+services:
+  api:
+    build: .
+    image: ml-churn-api:1.0
+    container_name: ml-churn-api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      LOG_FILE: /app/logs/api.log
+      LOG_LEVEL: INFO
+      CORS_ORIGINS: "http://localhost:${FRONTEND_PORT:-8080}"
+    volumes:
+      - api-logs:/app/logs
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    image: ml-churn-frontend:1.0
+    container_name: ml-churn-frontend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------- Métriques
+  prometheus:
+    build: ./monitoring/prometheus
+    image: ml-churn-prometheus:1.0
+    container_name: ml-churn-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - prometheus-data:/prometheus
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  grafana:
+    build: ./monitoring/grafana
+    image: ml-churn-grafana:1.0
+    container_name: ml-churn-grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-admin}"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/dashboards/ml-churn-api.json
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------- Logs
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.5
+    container_name: ml-churn-elasticsearch
+    environment:
+      discovery.type: single-node
+      cluster.name: ml-churn
+      # Sécurité désactivée pour le TP uniquement (pas d'exposition sur Internet)
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "${ES_PORT:-9200}:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -qE '\"status\":\"(green|yellow)\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  logstash:
+    build: ./docker/logstash
+    image: ml-churn-logstash:1.0
+    container_name: ml-churn-logstash
+    environment:
+      LS_JAVA_OPTS: "-Xms512m -Xmx512m"
+      # Pas de monitoring X-Pack (il chercherait un Elasticsearch sur localhost)
+      XPACK_MONITORING_ENABLED: "false"
+    volumes:
+      - api-logs:/var/log/ml-churn:ro
+      - logstash-data:/usr/share/logstash/data
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.19.5
+    container_name: ml-churn-kibana
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      TELEMETRY_OPTIN: "false"
+      TELEMETRY_BANNER: "false"
+      XPACK_SECURITY_SHOWINSECURECLUSTERWARNING: "false"
+    ports:
+      - "${KIBANA_PORT:-5601}:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q '\"level\":\"available\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+    restart: unless-stopped
+
+  # Service ponctuel : crée la vue de données et le dashboard Kibana puis s'arrête
+  kibana-setup:
+    build: ./docker/kibana
+    image: ml-churn-kibana-setup:1.0
+    container_name: ml-churn-kibana-setup
+    environment:
+      KIBANA_URL: http://kibana:5601
+    depends_on:
+      kibana:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  api-logs:
+  prometheus-data:
+  grafana-data:
+  es-data:
+  logstash-data:
