@@ -1,0 +1,191 @@
+# Pipeline CI/CD (PARTIES 16 et 24)
+#
+#   push / pull request
+#     ├── tests        : données → entraînement (garde-fou qualité) → tests unitaires + API
+#     ├── e2e          : API lancée + tests Selenium (Chrome headless)
+#     ├── docker       : build des images, stack api + monitoring, tests d'intégration
+#     └── publish      : (branche main) image publiée sur GitHub Container Registry
+#
+# Corrections du workflow du sujet :
+# - le modèle et les données sont régénérés avant pytest (sinon models/model.pkl
+#   peut manquer sur le runner) ;
+# - « pytest » seul trouve le paquet api grâce à pytest.ini (pythonpath = .) ;
+# - les tests Selenium sont exclus du job de tests unitaires (pas de serveur ni
+#   de navigateur) et lancés dans un job dédié ;
+# - ajout du build Docker et d'un test d'intégration de la stack (PARTIE 24).
+
+name: CI ML Churn
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - "feature/**"
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  tests:
+    name: Tests unitaires et API
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Installation
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Génération du dataset (reproductibilité)
+        run: |
+          python src/generate_data.py
+          git diff --exit-code data/raw/churn.csv
+
+      - name: Entraînement et garde-fou qualité
+        run: python src/train.py --min-f1 0.45
+
+      - name: Tests
+        run: pytest --cov=api --cov=src --cov-report=term-missing --junitxml=reports/junit.xml
+
+      - name: Artefacts (métriques, modèle, rapport de tests)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-and-tests
+          path: |
+            reports/metrics.json
+            reports/junit.xml
+            models/metadata.json
+            models/model.pkl
+
+  e2e:
+    name: Tests E2E Selenium
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Installation
+        run: pip install -r requirements-dev.txt
+
+      - name: Démarrage de l'API
+        run: |
+          nohup uvicorn api.main:app --host 127.0.0.1 --port 8000 > uvicorn.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8000/health && exit 0; sleep 1; done
+          cat uvicorn.log; exit 1
+
+      - name: Tests Selenium (Chrome headless)
+        env:
+          API_URL: http://127.0.0.1:8000
+          HEADLESS: "1"
+        run: pytest -m e2e tests/test_selenium.py -v
+
+      - name: Logs de l'API
+        if: failure()
+        run: cat uvicorn.log
+
+  docker:
+    name: Build Docker et tests d'intégration
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validation du docker-compose
+        run: docker compose config --quiet
+
+      - name: Build de l'image de l'API
+        run: docker build -t ml-churn-api:${{ github.sha }} -t ml-churn-api:1.0 .
+
+      - name: Stack API + interface + Prometheus + Grafana
+        run: docker compose up -d --build --wait --wait-timeout 180 api frontend prometheus grafana
+
+      - name: Tests d'intégration
+        run: |
+          set -e
+          curl -sf http://localhost:8000/health | grep -q '"UP"'
+          curl -sf -X POST http://localhost:8000/predict \
+            -H "Content-Type: application/json" \
+            -d '{"age":35,"anciennete":5,"revenu":450000,"nb_reclamations":2,"montant_mensuel":25000,"retards_paiement":2}' \
+            | tee /dev/stderr | grep -q '"prediction"'
+          # Interface web et proxy Nginx
+          curl -sf http://localhost:8080/ | grep -q "predict-btn"
+          curl -sf http://localhost:8080/api/health | grep -q '"UP"'
+          # Prometheus collecte bien l'API
+          for i in $(seq 1 20); do
+            curl -s "http://localhost:9090/api/v1/query?query=up%7Bjob%3D%22ml-churn-api%22%7D" | grep -q '"1"\]' && break
+            sleep 3
+          done
+          curl -s "http://localhost:9090/api/v1/query?query=up%7Bjob%3D%22ml-churn-api%22%7D" | grep -q '"1"\]'
+          curl -sf http://localhost:8000/metrics | grep -q churn_predictions_total
+          # Grafana : source de données et dashboard provisionnés
+          curl -sf -u admin:admin http://localhost:3000/api/health
+          curl -sf -u admin:admin "http://localhost:3000/api/search?query=ML%20Churn" | grep -q "ml-churn-api"
+
+      - name: Logs en cas d'échec
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Arrêt de la stack
+        if: always()
+        run: docker compose down -v
+
+  publish:
+    name: Publication de l'image (GHCR)
+    needs: [e2e, docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Connexion à GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build et push
+        run: |
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/ml-churn-api"
+          VERSION=$(python3 -c "import json; print(json.load(open('models/metadata.json'))['version'])")
+          docker build \
+            --label "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
+            -t "$IMAGE:latest" -t "$IMAGE:$VERSION" -t "$IMAGE:sha-${GITHUB_SHA::7}" .
+          docker push --all-tags "$IMAGE"
+          echo "Image publiée : $IMAGE:$VERSION" >> "$GITHUB_STEP_SUMMARY"
