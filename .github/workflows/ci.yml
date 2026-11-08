@@ -149,8 +149,12 @@ jobs:
           done
           curl -s "http://localhost:9090/api/v1/query?query=up%7Bjob%3D%22ml-churn-api%22%7D" | grep -q '"1"\]'
           curl -sf http://localhost:8000/metrics | grep -q churn_predictions_total
-          # Grafana : source de données et dashboard provisionnés
-          curl -sf -u admin:admin http://localhost:3000/api/health
+          # Grafana : source de données et dashboard provisionnés (Grafana n'a pas de
+          # healthcheck Docker : on attend qu'il réponde avant de vérifier le dashboard)
+          for i in $(seq 1 30); do
+            curl -sf -u admin:admin http://localhost:3000/api/health > /dev/null && break
+            sleep 2
+          done
           curl -sf -u admin:admin "http://localhost:3000/api/search?query=ML%20Churn" | grep -q "ml-churn-api"
 
       - name: Logs en cas d'échec
