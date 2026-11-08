@@ -1,0 +1,11 @@
+# Fins de ligne LF dans le dépôt : le CSV, les scripts shell et les configurations
+# sont identiques sous Windows et Linux (même empreinte SHA-256 du dataset).
+* text=auto eol=lf
+*.pkl binary
+*.png binary
+*.jpg binary
+*.pdf binary
+*.pptx binary
+*.docx binary
+*.bat text eol=crlf
+*.ps1 text eol=crlf

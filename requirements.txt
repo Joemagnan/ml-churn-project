@@ -1,0 +1,18 @@
+# Dépendances de l'API (installées dans l'image Docker).
+# Versions figées : le modèle joblib doit être rechargé avec la même version de
+# scikit-learn que celle qui l'a entraîné. Python 3.12 (local, Docker et CI).
+#
+# Correction du sujet : « pip freeze > requirements.txt » sous Windows mélange les
+# outils de développement (Selenium, Jupyter…) et alourdit l'image ; les outils
+# de test sont donc dans requirements-dev.txt.
+numpy==2.5.4
+pandas==3.1.1
+scikit-learn==1.9.1
+scipy==1.18.1
+joblib==1.6.0
+fastapi==0.162.2
+starlette==1.10.0
+uvicorn==0.54.0
+pydantic==2.14.3
+prometheus-fastapi-instrumentator==8.1.0
+prometheus_client==0.26.0

@@ -1,0 +1,17 @@
+# Fichier du sujet (PARTIE 12)
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.env
+.pytest_cache/
+
+# Ajouts
+logs/
+.coverage
+htmlcov/
+reports/junit.xml
+models/registry/
+jmeter/results/**/*.jtl
+jmeter/results/**/report/
+jmeter.log

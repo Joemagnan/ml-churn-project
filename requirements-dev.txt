@@ -1,0 +1,8 @@
+# Développement, Data Science et tests (CI GitHub Actions)
+-r requirements.txt
+matplotlib==3.11.2
+seaborn==0.13.2
+pytest==9.2.0
+pytest-cov==7.1.0
+httpx==0.28.1
+selenium==4.52.0
