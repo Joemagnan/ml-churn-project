@@ -99,6 +99,11 @@ l'exécuter (CI, serveur), et génère un rapport HTML.
   délais d'attente, reprise après le pic).
 - **Endurance** (*soak test*) : une charge normale pendant longtemps (plusieurs heures)
   pour détecter les fuites mémoire, la saturation des disques par les logs, la dégradation lente.
+  Plan prêt dans le projet : `jmeter/endurance_test_plan.jmx` (100 utilisateurs, 1 h par défaut).
+
+Dans ce projet : la série 100 / 500 / 1000 utilisateurs (10 boucles) est un test de
+charge croissante ; « 1000 utilisateurs × 50 boucles » est un test de stress (saturation
+à environ 1 150 req/s, sans erreur, p95 de 897 ms).
 
 **Que signifie le 95e percentile du temps de réponse ?**
 95 % des requêtes ont été servies en moins de cette durée ; les 5 % restantes ont été

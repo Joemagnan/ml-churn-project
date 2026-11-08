@@ -221,9 +221,11 @@ supérieure.
 - **L'observabilité a un coût.** Les logs doivent être utiles et peu nombreux : une
   ligne par requête, structurée.
 - **Charge, stress, endurance.** Les campagnes 100 / 500 / 1000 sont des tests de
-  charge croissante ; la section 6.6 est un test de stress. Un test d'endurance
-  (100 utilisateurs pendant plusieurs heures) reste à faire pour vérifier la rotation
-  des logs et l'absence de fuite mémoire.
+  charge croissante ; la section 6.6 est un test de stress. Le plan
+  `jmeter/endurance_test_plan.jmx` (100 utilisateurs pendant 1 h par défaut, boucles
+  infinies arrêtées par la durée) prépare le test d'endurance ; il a été validé sur
+  20 s (24 713 requêtes, 0 erreur), mais la campagne longue reste à mener pour
+  vérifier la rotation des logs et l'absence de fuite mémoire.
 - **Montée en charge horizontale.** Au-delà, on passerait à plusieurs conteneurs API
   derrière le répartiteur Nginx (`docker compose up --scale api=N`, ou Kubernetes),
   Prometheus découvrant les instances par DNS.
