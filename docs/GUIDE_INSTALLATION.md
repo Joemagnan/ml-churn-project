@@ -164,6 +164,16 @@ que `localhost` (sinon chaque connexion tente d'abord l'IPv6).
 
 Pour ouvrir le plan en mode graphique : `jmeter -t jmeter/churn_test_plan.jmx`.
 
+Test d'endurance (charge normale maintenue longtemps, 1 h par défaut) :
+
+```bash
+jmeter -n -t jmeter/endurance_test_plan.jmx -Jthreads=100 -Jduration=3600 \
+  -Jhost=127.0.0.1 -Jport=8000 -l endurance.jtl -e -o endurance-report
+```
+
+Pendant le test, suivre dans Grafana la stabilité du p95 et du débit, et vérifier la
+mémoire avec `docker stats ml-churn-api` (elle doit rester stable).
+
 ## 9. Déploiement sur une VM
 
 ```bash

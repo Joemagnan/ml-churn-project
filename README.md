@@ -75,7 +75,7 @@ docker compose up -d --build
 | 6 | API FastAPI | [api/main.py](api/main.py), [api/logging_config.py](api/logging_config.py) |
 | 7 | Tests Pytest | [tests/](tests/) – `test_api.py`, `test_data.py`, `test_model.py`, `test_logging.py` |
 | 8 | Tests Selenium | [tests/test_selenium.py](tests/test_selenium.py) |
-| 9 | Plan de test JMeter | [jmeter/churn_test_plan.jmx](jmeter/churn_test_plan.jmx) + [résultats](jmeter/results/summary.md) |
+| 9 | Plan de test JMeter | [jmeter/churn_test_plan.jmx](jmeter/churn_test_plan.jmx) (charge / stress), [jmeter/endurance_test_plan.jmx](jmeter/endurance_test_plan.jmx) (endurance) + [résultats](jmeter/results/summary.md) |
 | 10 | Dockerfile | [Dockerfile](Dockerfile) |
 | 11 | docker-compose.yml | [docker-compose.yml](docker-compose.yml) |
 | 12 | Pipeline GitHub Actions | [.github/workflows/ci.yml](.github/workflows/ci.yml) |

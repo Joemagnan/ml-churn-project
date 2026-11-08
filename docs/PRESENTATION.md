@@ -190,7 +190,7 @@ Une ligne JSON par requête : **quand, qui, quelle opération, quel modèle, que
 - **MLflow Model Registry** + **DVC** à la place du registre local
 - Dérive complète (Evidently) + suivi de la précision réelle (labels différés)
 - Sécurité : X-Pack ELK, HTTPS, authentification de l'API, limitation de débit
-- Alertmanager pour notifier ; test d'**endurance** ; montée en charge horizontale (`--scale api=N`)
+- Alertmanager pour notifier ; campagne d'**endurance** longue (plan prêt) ; montée en charge horizontale (`--scale api=N`)
 - Déploiement sur VM cloud : script prêt (`deploy/deploy.sh`)
 
 ---
