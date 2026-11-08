@@ -1,0 +1,38 @@
+{
+  "index_patterns": ["ml-churn-logs-*"],
+  "priority": 200,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "dynamic": true,
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "timestamp": { "type": "date" },
+        "level": { "type": "keyword" },
+        "service": { "type": "keyword" },
+        "logger": { "type": "keyword" },
+        "message": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
+        "operation": { "type": "keyword" },
+        "method": { "type": "keyword" },
+        "endpoint": { "type": "keyword" },
+        "status_code": { "type": "integer" },
+        "response_time_ms": { "type": "float" },
+        "model_time_ms": { "type": "float" },
+        "client_id": { "type": "keyword" },
+        "client_ip": { "type": "keyword" },
+        "request_id": { "type": "keyword" },
+        "model_name": { "type": "keyword" },
+        "model_version": { "type": "keyword" },
+        "model_path": { "type": "keyword" },
+        "prediction": { "type": "keyword" },
+        "probability": { "type": "float" },
+        "error": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 512 } } },
+        "error_detail": { "type": "text" },
+        "tags": { "type": "keyword" }
+      }
+    }
+  }
+}

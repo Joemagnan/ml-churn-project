@@ -1,0 +1,44 @@
+# Règles d'alerte : visibles dans Prometheus > Alerts (pas d'Alertmanager dans le TP).
+groups:
+  - name: ml-churn-api
+    rules:
+      - alert: ApiIndisponible
+        expr: up{job="ml-churn-api"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "L'API de prédiction ne répond plus à Prometheus"
+
+      - alert: TauxErreurEleve
+        expr: |
+          sum(rate(http_requests_total{job="ml-churn-api",status="5xx"}[2m]))
+            / clamp_min(sum(rate(http_requests_total{job="ml-churn-api"}[2m])), 1e-9) > 0.05
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Plus de 5 % de réponses 5xx sur 2 minutes"
+
+      - alert: LatencePredictionElevee
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_request_duration_seconds_bucket{job="ml-churn-api",handler="/predict"}[2m]))) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "95e percentile du temps de réponse de /predict supérieur à 500 ms"
+
+      - alert: DeriveProbabiliteMoyenne
+        # Indicateur simple de dérive : la probabilité moyenne prédite s'écarte
+        # de la valeur observée à l'entraînement (taux de churn ~ 43 %).
+        expr: |
+          (sum(rate(churn_prediction_probability_sum[30m])) / clamp_min(sum(rate(churn_prediction_probability_count[30m])), 1e-9)) > 0.65
+          or
+          (sum(rate(churn_prediction_probability_sum[30m])) / clamp_min(sum(rate(churn_prediction_probability_count[30m])), 1e-9)) < 0.20
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "La probabilité moyenne de churn prédite s'écarte fortement de l'entraînement"

@@ -1,0 +1,5 @@
+# Remplace le .dockerignore racine pour ce build : seuls l'interface et la
+# configuration Nginx sont envoyées au démon Docker.
+*
+!frontend/
+!docker/nginx/default.conf
