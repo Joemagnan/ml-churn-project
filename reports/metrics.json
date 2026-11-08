@@ -1,0 +1,78 @@
+{
+  "selected_model": "logistic_regression",
+  "selection_reason": "meilleur f1 moyen en validation croisée 5 plis (0.5231)",
+  "results": {
+    "logistic_regression": {
+      "cv": {
+        "f1": 0.5231,
+        "roc_auc": 0.6551,
+        "accuracy": 0.6319
+      },
+      "test": {
+        "accuracy": 0.625,
+        "precision": 0.5821,
+        "recall": 0.4535,
+        "f1": 0.5098,
+        "roc_auc": 0.6364,
+        "confusion_matrix": [
+          [
+            172,
+            56
+          ],
+          [
+            94,
+            78
+          ]
+        ]
+      }
+    },
+    "decision_tree": {
+      "cv": {
+        "f1": 0.4357,
+        "roc_auc": 0.6235,
+        "accuracy": 0.6275
+      },
+      "test": {
+        "accuracy": 0.6325,
+        "precision": 0.5828,
+        "recall": 0.5116,
+        "f1": 0.5449,
+        "roc_auc": 0.6233,
+        "confusion_matrix": [
+          [
+            165,
+            63
+          ],
+          [
+            84,
+            88
+          ]
+        ]
+      }
+    },
+    "random_forest": {
+      "cv": {
+        "f1": 0.4875,
+        "roc_auc": 0.6216,
+        "accuracy": 0.61
+      },
+      "test": {
+        "accuracy": 0.6025,
+        "precision": 0.5474,
+        "recall": 0.436,
+        "f1": 0.4854,
+        "roc_auc": 0.6247,
+        "confusion_matrix": [
+          [
+            166,
+            62
+          ],
+          [
+            97,
+            75
+          ]
+        ]
+      }
+    }
+  }
+}
