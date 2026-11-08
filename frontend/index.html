@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prédiction du churn – Opérateur télécom</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Prédiction du churn client</h1>
+    <p class="subtitle">Saisissez le profil d'un client pour estimer son risque de résiliation.</p>
+    <div class="status">
+      <span id="api-status" class="badge badge-unknown">API : vérification…</span>
+      <span id="model-info" class="model-info"></span>
+    </div>
+  </header>
+
+  <main>
+    <form id="predict-form" novalidate>
+      <div class="grid">
+        <label>Âge (années)
+          <input id="age" name="age" type="number" min="18" max="100" value="35" required>
+        </label>
+        <label>Ancienneté (mois)
+          <input id="anciennete" name="anciennete" type="number" min="0" value="5" required>
+        </label>
+        <label>Revenu mensuel (FCFA)
+          <input id="revenu" name="revenu" type="number" min="0" step="1000" value="450000" required>
+        </label>
+        <label>Nombre de réclamations
+          <input id="nb_reclamations" name="nb_reclamations" type="number" min="0" value="2" required>
+        </label>
+        <label>Facture mensuelle (FCFA)
+          <input id="montant_mensuel" name="montant_mensuel" type="number" min="0" step="500" value="25000" required>
+        </label>
+        <label>Retards de paiement
+          <input id="retards_paiement" name="retards_paiement" type="number" min="0" value="2" required>
+        </label>
+      </div>
+      <button id="predict-btn" type="submit">Prédire</button>
+    </form>
+
+    <section id="error" class="error" role="alert" hidden></section>
+
+    <section id="result" class="result" aria-live="polite" hidden>
+      <h2>Résultat</h2>
+      <p class="label">Prédiction : <strong id="result-label"></strong></p>
+      <p>Probabilité de churn : <strong id="result-proba"></strong></p>
+      <div class="bar"><div id="result-bar"></div></div>
+      <p class="meta">Modèle <span id="result-version"></span> · calcul en <span id="result-duration"></span> ms</p>
+    </section>
+  </main>
+
+  <footer>Projet fil rouge MLOps – Joe MAGNAN – MDSIA 2</footer>
+  <script src="app.js"></script>
+</body>
+</html>
